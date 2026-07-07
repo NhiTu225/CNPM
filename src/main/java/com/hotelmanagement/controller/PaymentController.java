@@ -9,10 +9,15 @@ import com.hotelmanagement.model.User;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.time.LocalDate;
@@ -172,14 +177,20 @@ public class PaymentController {
         }
 
         if (success) {
-            SystemLogDAO.addLog(currentUser.getEmail(), String.format("Đặt phòng trực tuyến thành công: %d phòng loại %s, Tổng thanh toán %.0fđ qua %s", 
+            SystemLogDAO.addLog(currentUser.getEmail(), String.format("Đặt phòng trực tuyến thành công: %d phòng loại %s, Tổng thanh toán %.0fđ qua %s",
                     selectedRooms.size(), selectedRooms.get(0).getRoomType(), totalPrice, paymentMethodText));
 
-            showAlert(Alert.AlertType.INFORMATION, "Thanh toán thành công", "Đặt phòng thành công! " + selectedRooms.size() + " phòng đã được khóa giữ chỗ an toàn.");
+            // Lấy mã đặt phòng mới nhất vừa tạo để hiển thị trong popup xác nhận (FR11)
+            List<Booking> latestBookings = bookingDAO.getBookingsByUserId(currentUser.getId());
+            int newBookingId = latestBookings.isEmpty() ? 0 : latestBookings.get(0).getId();
+
             closeDialog();
             if (parentController != null) {
                 parentController.onBookingSuccess();
             }
+
+            // FR11: Hiển thị popup xác nhận chi tiết sau khi đặt phòng thành công
+            showBookingConfirmationPopup(newBookingId, paymentMethodText);
         } else {
             showAlert(Alert.AlertType.ERROR, "Lỗi đặt phòng", "Không thể thực hiện lưu lịch sử đặt phòng. Vui lòng thử lại.");
             isProcessing = false;
@@ -202,5 +213,82 @@ public class PaymentController {
         alert.setHeaderText(null);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    // FR11: Popup xác nhận đặt phòng chi tiết
+    private void showBookingConfirmationPopup(int bookingId, String paymentMethod) {
+        Stage popup = new Stage();
+        popup.initModality(Modality.APPLICATION_MODAL);
+        popup.setTitle("✅ Xác Nhận Đặt Phòng Thành Công");
+
+        VBox root = new VBox(14);
+        root.setPadding(new Insets(28, 32, 24, 32));
+        root.setStyle("-fx-background-color: #ffffff; -fx-font-family: 'Segoe UI';");
+        root.setPrefWidth(420);
+        root.setAlignment(Pos.TOP_LEFT);
+
+        // Tiêu đề
+        Label lblTitle = new Label("🎉  Đặt Phòng Thành Công!");
+        lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #276749;");
+
+        Label lblSub = new Label("Chi tiết đơn đặt phòng của quý khách:");
+        lblSub.setStyle("-fx-font-size: 12px; -fx-text-fill: #718096;");
+
+        // Đường phân cách
+        Separator sep1 = new Separator();
+
+        // Xây dựng tên phòng
+        StringBuilder roomNums = new StringBuilder();
+        for (int i = 0; i < selectedRooms.size(); i++) {
+            roomNums.append(selectedRooms.get(i).getRoomNumber());
+            if (i < selectedRooms.size() - 1) roomNums.append(", ");
+        }
+        long nights = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+        if (nights <= 0) nights = 1;
+
+        // Các dòng thông tin
+        VBox infoBox = new VBox(8);
+        infoBox.setStyle("-fx-background-color: #f7fafc; -fx-padding: 14; -fx-background-radius: 8;");
+        infoBox.getChildren().addAll(
+            makeInfoRow("📋  Mã đặt phòng:",  bookingId > 0 ? "#" + bookingId : "(đang xử lý)"),
+            makeInfoRow("🛏️  Loại phòng:",    selectedRooms.get(0).getRoomType()),
+            makeInfoRow("🔢  Số phòng:",       roomNums.toString()),
+            makeInfoRow("📅  Nhận phòng:",    checkInDate.toString()),
+            makeInfoRow("📅  Trả phòng:",     checkOutDate.toString()),
+            makeInfoRow("🌙  Số đêm:",        nights + " đêm"),
+            makeInfoRow("💳  Thanh toán:",    paymentMethod),
+            makeInfoRow("💰  Tổng tiền:",     String.format("%,.0f ₫", totalPrice))
+        );
+
+        Separator sep2 = new Separator();
+
+        Label lblNote = new Label("⏰  Giờ nhận phòng: 14:00  |  Giờ trả phòng: 12:00");
+        lblNote.setStyle("-fx-font-size: 11px; -fx-text-fill: #a0aec0; -fx-font-style: italic;");
+
+        Button btnClose = new Button("Đã hiểu, Đóng lại");
+        btnClose.setPrefWidth(Double.MAX_VALUE);
+        btnClose.setPrefHeight(38);
+        btnClose.setStyle("-fx-background-color: #276749; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px; -fx-background-radius: 8;");
+        btnClose.setOnAction(e -> popup.close());
+
+        root.getChildren().addAll(lblTitle, lblSub, sep1, infoBox, sep2, lblNote, btnClose);
+
+        Scene scene = new Scene(root);
+        popup.setScene(scene);
+        popup.setResizable(false);
+        popup.centerOnScreen();
+        popup.showAndWait();
+    }
+
+    private HBox makeInfoRow(String label, String value) {
+        HBox row = new HBox(8);
+        row.setAlignment(Pos.CENTER_LEFT);
+        Label lbl = new Label(label);
+        lbl.setMinWidth(140);
+        lbl.setStyle("-fx-font-size: 12px; -fx-text-fill: #4a5568; -fx-font-weight: bold;");
+        Label val = new Label(value);
+        val.setStyle("-fx-font-size: 12px; -fx-text-fill: #2d3748;");
+        row.getChildren().addAll(lbl, val);
+        return row;
     }
 }

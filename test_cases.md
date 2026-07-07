@@ -164,6 +164,59 @@ Tài liệu này đặc tả chi tiết các kịch bản kiểm thử (Test Cas
 
 ---
 
+### FR11: Xác nhận đặt phòng (Booking Confirmation)
+*Hiển thị popup xác nhận sau khi đặt phòng thành công*
+
+#### TC_FR11_01: Hiển thị popup xác nhận đặt phòng thành công (Positive)
+*   **Tiền điều kiện:** Khách hàng vừa hoàn tất đặt phòng 101 từ 2026-10-10 đến 2026-10-12, bản ghi đã được lưu vào bảng bookings.
+*   **Các bước thực hiện:**
+    1. Nhấn nút "Xác nhận đặt phòng" sau khi điền đầy đủ thông tin và thanh toán.
+*   **Kết quả mong đợi:**
+    *   Hệ thống hiển thị popup thông báo với nội dung:
+        * Mã đặt phòng (booking id)
+        * Tên phòng / Số phòng: 101
+        * Ngày nhận phòng: 2026-10-10
+        * Ngày trả phòng: 2026-10-12
+        * Tổng tiền: 1,000,000 VND
+    *   Popup có nút "Đóng" để khách xác nhận đã đọc.
+
+#### TC_FR11_02: Không hiển thị popup khi đặt phòng thất bại (Negative)
+*   **Tiền điều kiện:** Phòng 101 đã có trạng thái BOOKED (đã được đặt bởi người khác).
+*   **Các bước thực hiện:**
+    1. Khách cố tình đặt phòng 101 cùng khoảng thời gian đã bị chiếm.
+*   **Kết quả mong đợi:**
+    *   Hệ thống **không** hiển thị popup xác nhận.
+    *   Thay vào đó hiển thị thông báo lỗi: "Phòng đã được đặt trong khoảng thời gian này."
+
+---
+
+### FR12: Thông báo nhắc nhở (Reminder Notification)
+*Hiển thị thông báo nhắc nhở cho khách khi đến gần ngày check-in*
+
+#### TC_FR12_01: Hiển thị thông báo nhắc nhở khi khách đăng nhập gần ngày check-in (Positive)
+*   **Tiền điều kiện:** Khách hàng customer@gmail.com có đơn đặt phòng id = 1 với ngày check-in là ngày mai (ví dụ: 2026-10-10), trạng thái booking = 'BOOKED'.
+*   **Các bước thực hiện:**
+    1. Khách hàng đăng nhập vào hệ thống vào ngày 2026-10-09.
+*   **Kết quả mong đợi:**
+    *   Hệ thống kiểm tra bảng bookings:
+        ```sql
+        SELECT * FROM bookings 
+        WHERE user_id = 3 
+          AND status = 'BOOKED' 
+          AND DATEDIFF(day, GETDATE(), check_in) <= 1;
+        ```
+    *   Hiển thị thông báo nhắc nhở cho khách: "Bạn có lịch nhận phòng vào ngày mai (2026-10-10). Vui lòng chuẩn bị sẵn sàng!"
+
+#### TC_FR12_02: Không hiển thị thông báo khi chưa đến gần ngày check-in (Negative)
+*   **Tiền điều kiện:** Khách hàng có đơn đặt phòng với ngày check-in còn hơn 1 ngày (ví dụ: check-in = 2026-10-15, hôm nay = 2026-10-09).
+*   **Các bước thực hiện:**
+    1. Khách hàng đăng nhập vào hệ thống.
+*   **Kết quả mong đợi:**
+    *   Hệ thống **không** hiển thị thông báo nhắc nhở.
+    *   Màn hình chính hiển thị bình thường không có popup.
+
+---
+
 ### FR13 & FR14: Báo cáo Doanh thu & Tỷ lệ lấp đầy (Reports & Analytics)
 *Ánh xạ trực tiếp đến bảng invoices và bookings*
 

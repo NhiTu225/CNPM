@@ -161,7 +161,98 @@ public class CustomerController {
         // Gán dữ liệu hồ sơ cá nhân ban đầu
         txtProfileEmail.setText(user.getEmail());
         txtProfileFullName.setText(user.getFullName());
+
+        // FR12: Kiểm tra và hiển thị popup nhắc nhở nếu khách có lịch nhận phòng sắp tới
+        javafx.application.Platform.runLater(this::checkCheckInReminder);
     }
+
+    // FR12: Kiểm tra booking sắp đến hạn check-in và hiển thị popup nhắc nhở chi tiết
+    private void checkCheckInReminder() {
+        List<Booking> bookings = bookingDAO.getBookingsByUserId(currentUser.getId());
+        LocalDate today = LocalDate.now();
+
+        List<Booking> upcoming = bookings.stream()
+                .filter(b -> "BOOKED".equalsIgnoreCase(b.getStatus()))
+                .filter(b -> {
+                    long daysUntilCheckIn = java.time.temporal.ChronoUnit.DAYS.between(today, b.getCheckIn());
+                    return daysUntilCheckIn >= 0 && daysUntilCheckIn <= 1;
+                })
+                .collect(java.util.stream.Collectors.toList());
+
+        if (upcoming.isEmpty()) return;
+
+        // Xây dựng popup nhắc nhở chi tiết
+        javafx.stage.Stage popup = new javafx.stage.Stage();
+        popup.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        popup.setTitle("🔔 Nhắc Nhở Lịch Nhận Phòng");
+
+        javafx.scene.layout.VBox root = new javafx.scene.layout.VBox(14);
+        root.setPadding(new javafx.geometry.Insets(28, 32, 24, 32));
+        root.setStyle("-fx-background-color: #ffffff; -fx-font-family: 'Segoe UI';");
+        root.setPrefWidth(440);
+
+        Label lblTitle = new Label("⏰  Nhắc Nhở: Lịch Nhận Phòng Sắp Đến!");
+        lblTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #c05621;");
+        lblTitle.setWrapText(true);
+
+        Label lblSub = new Label("Xin chào " + currentUser.getFullName() + ", quý khách có lịch đặt phòng sắp đến hạn:");
+        lblSub.setStyle("-fx-font-size: 12px; -fx-text-fill: #718096;");
+        lblSub.setWrapText(true);
+
+        Separator sep1 = new Separator();
+
+        javafx.scene.layout.VBox allBookingsBox = new javafx.scene.layout.VBox(10);
+
+        for (Booking b : upcoming) {
+            long daysLeft = java.time.temporal.ChronoUnit.DAYS.between(today, b.getCheckIn());
+            String urgency = daysLeft == 0 ? "🔴  HÔM NAY" : "🟡  NGÀY MAI";
+            String urgencyColor = daysLeft == 0 ? "#c53030" : "#c05621";
+
+            javafx.scene.layout.VBox card = new javafx.scene.layout.VBox(6);
+            card.setStyle("-fx-background-color: " + (daysLeft == 0 ? "#fff5f5" : "#fffaf0") + ";" +
+                    "-fx-border-color: " + (daysLeft == 0 ? "#fc8181" : "#f6ad55") + ";" +
+                    "-fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12;");
+
+            Label lblUrgency = new Label(urgency + " — Nhận phòng: " + b.getCheckIn().toString());
+            lblUrgency.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: " + urgencyColor + ";");
+
+            Label lblRoom = new Label("🛏️  Phòng số: " + b.getRoomNumber()
+                    + "   |   📅  Trả phòng: " + b.getCheckOut().toString());
+            lblRoom.setStyle("-fx-font-size: 12px; -fx-text-fill: #4a5568;");
+
+            long nights = java.time.temporal.ChronoUnit.DAYS.between(b.getCheckIn(), b.getCheckOut());
+            Label lblTotal = new Label("💰  Tổng tiền: " + String.format("%,.0f ₫", b.getTotal())
+                    + "   |   🌙  " + nights + " đêm   |   Mã #" + b.getId());
+            lblTotal.setStyle("-fx-font-size: 11px; -fx-text-fill: #718096;");
+
+            card.getChildren().addAll(lblUrgency, lblRoom, lblTotal);
+            allBookingsBox.getChildren().add(card);
+        }
+
+        Separator sep2 = new Separator();
+
+        Label lblNote = new Label("📌  Giờ nhận phòng tiêu chuẩn: 14:00\n" +
+                "📌  Vui lòng mang theo CMND/Hộ chiếu khi đến nhận phòng.\n" +
+                "📌  Liên hệ lễ tân nếu cần hỗ trợ thêm.");
+        lblNote.setStyle("-fx-font-size: 11px; -fx-text-fill: #718096; -fx-font-style: italic;");
+        lblNote.setWrapText(true);
+
+        Button btnClose = new Button("Đã hiểu, Đóng lại");
+        btnClose.setPrefWidth(Double.MAX_VALUE);
+        btnClose.setPrefHeight(38);
+        btnClose.setStyle("-fx-background-color: #c05621; -fx-text-fill: white; -fx-font-weight: bold;" +
+                "-fx-font-size: 13px; -fx-background-radius: 8;");
+        btnClose.setOnAction(e -> popup.close());
+
+        root.getChildren().addAll(lblTitle, lblSub, sep1, allBookingsBox, sep2, lblNote, btnClose);
+
+        javafx.scene.Scene scene = new javafx.scene.Scene(root);
+        popup.setScene(scene);
+        popup.setResizable(false);
+        popup.centerOnScreen();
+        popup.showAndWait();
+    }
+
 
     @FXML
     public void initialize() {
