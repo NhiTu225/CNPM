@@ -28,6 +28,7 @@ public class PaymentController {
     private LocalDate checkOutDate;
     private double totalPrice;
     private CustomerController parentController;
+    private boolean isProcessing = false;
 
     private final BookingDAO bookingDAO = new BookingDAO();
     private final RoomDAO roomDAO = new RoomDAO();
@@ -130,6 +131,9 @@ public class PaymentController {
 
     @FXML
     void handlePayment(ActionEvent event) {
+        if (isProcessing) return;
+        isProcessing = true;
+
         String method = ddlPaymentMethod.getValue();
         
         // Nếu thanh toán qua Visa, thực hiện kiểm tra biểu mẫu (Form Validation)
@@ -141,6 +145,7 @@ public class PaymentController {
 
             if (cardNumber.isEmpty() || cardHolder.isEmpty() || cardExpiry.isEmpty() || cardCvv.isEmpty()) {
                 showAlert(Alert.AlertType.WARNING, "Cảnh báo", "Vui lòng nhập đầy đủ thông tin thẻ thanh toán.");
+                isProcessing = false;
                 return;
             }
         }
@@ -177,6 +182,7 @@ public class PaymentController {
             }
         } else {
             showAlert(Alert.AlertType.ERROR, "Lỗi đặt phòng", "Không thể thực hiện lưu lịch sử đặt phòng. Vui lòng thử lại.");
+            isProcessing = false;
         }
     }
 

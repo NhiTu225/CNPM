@@ -376,7 +376,7 @@ public class CustomerController {
                 }
             };
             loadImgTask.setOnSucceeded(e -> imgView.setImage(loadImgTask.getValue()));
-            loadImgTask.setOnFailed(e -> imgView.setImage(new Image("https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80")));
+            loadImgTask.setOnFailed(e -> imgView.setImage(new Image("https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80", true)));
             new Thread(loadImgTask).start();
 
             VBox infoBox = new VBox(5);
@@ -580,7 +580,7 @@ public class CustomerController {
             }
         };
         loadImgTask.setOnSucceeded(e -> imgView.setImage(loadImgTask.getValue()));
-        loadImgTask.setOnFailed(e -> imgView.setImage(new Image("https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80")));
+        loadImgTask.setOnFailed(e -> imgView.setImage(new Image("https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80", true)));
         new Thread(loadImgTask).start();
 
         Label nameLbl = new Label(room.getRoomName() + " (Số phòng: " + room.getRoomNumber() + ")");

@@ -11,6 +11,7 @@ USE HotelBookingSystem;
 GO
 
 -- Xóa các bảng nếu tồn tại để tránh xung đột khi chạy lại
+IF OBJECT_ID('dbo.notifications', 'U') IS NOT NULL DROP TABLE dbo.notifications;
 IF OBJECT_ID('dbo.system_logs', 'U') IS NOT NULL DROP TABLE dbo.system_logs;
 IF OBJECT_ID('dbo.invoices', 'U') IS NOT NULL DROP TABLE dbo.invoices;
 IF OBJECT_ID('dbo.payments', 'U') IS NOT NULL DROP TABLE dbo.payments;

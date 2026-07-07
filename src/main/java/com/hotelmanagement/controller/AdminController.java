@@ -28,6 +28,10 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import com.hotelmanagement.database.DBConnection;
 import java.util.List;
 import java.util.Map;
 
@@ -305,6 +309,26 @@ public class AdminController {
             selectedRoom.setStatus(cbRoomStatus.getValue());
 
             if (roomDAO.updateRoom(selectedRoom)) {
+                // Đồng bộ cập nhật trạng thái đặt phòng nếu phòng chuyển thành AVAILABLE, REPAIRING hoặc MAINTENANCE
+                String status = selectedRoom.getStatus();
+                if ("AVAILABLE".equals(status) || "REPAIRING".equals(status) || "MAINTENANCE".equals(status)) {
+                    String updateBookingsSql = """
+                            UPDATE bookings 
+                            SET status = 'CANCELLED' 
+                            WHERE room_id = ? 
+                            AND status IN ('BOOKED', 'CHECKED_IN')
+                            """;
+                    try (
+                        Connection conn = DBConnection.getConnection();
+                        PreparedStatement ps = conn.prepareStatement(updateBookingsSql)
+                    ) {
+                        ps.setInt(1, selectedRoom.getId());
+                        ps.executeUpdate();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
                 SystemLogDAO.addLog(getCurrentUserEmail(), "Cập nhật phòng ID " + selectedRoom.getId() + " (" + selectedRoom.getRoomNumber() + ")");
                 showAlert(Alert.AlertType.INFORMATION, "Thành công", "Đã cập nhật phòng thành công.");
                 clearRoomFields(null);

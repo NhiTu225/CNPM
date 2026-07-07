@@ -19,6 +19,10 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import com.hotelmanagement.database.DBConnection;
 
 import java.io.File;
 import java.util.List;
@@ -96,6 +100,11 @@ public class ReceptionistController {
     }
 
     @FXML
+    void handleRefresh(ActionEvent event) {
+        refreshData();
+    }
+
+    @FXML
     void handleCheckIn(ActionEvent event) {
         Booking booking = tblBookings.getSelectionModel().getSelectedItem();
         if (booking == null) {
@@ -143,9 +152,33 @@ public class ReceptionistController {
 
             SystemLogDAO.addLog(getCurrentUserEmail(), "Check-out & Tạo hóa đơn thành công cho booking ID: "
                     + booking.getId() + ", Tổng tiền: " + booking.getTotal());
-            showAlert(Alert.AlertType.INFORMATION, "Check-out thành công",
-                    "Đã Check-out. Hệ thống đã tự động xuất hóa đơn trị giá "
-                            + String.format("%,.0f", booking.getTotal()) + " VND.");
+            
+            // Hỏi lễ tân có muốn xuất file hóa đơn (.txt) không
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.setTitle("Check-out thành công");
+            confirmAlert.setHeaderText("Đã check-out và tạo hóa đơn trị giá " + String.format("%,.0f", booking.getTotal()) + " VND.");
+            confirmAlert.setContentText("Bạn có muốn xuất hóa đơn ra file văn bản (.txt) không?");
+            
+            ButtonType buttonYes = new ButtonType("Có, xuất hóa đơn", ButtonBar.ButtonData.YES);
+            ButtonType buttonNo = new ButtonType("Không, để sau", ButtonBar.ButtonData.NO);
+            confirmAlert.getButtonTypes().setAll(buttonYes, buttonNo);
+            
+            confirmAlert.showAndWait().ifPresent(response -> {
+                if (response == buttonYes) {
+                    FileChooser fileChooser = new FileChooser();
+                    fileChooser.setTitle("Lưu hóa đơn thanh toán");
+                    fileChooser.setInitialFileName("hoa_don_booking_" + booking.getId() + ".txt");
+                    fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text Files (*.txt)", "*.txt"));
+                    
+                    Stage stage = (Stage) tblBookings.getScene().getWindow();
+                    File file = fileChooser.showSaveDialog(stage);
+                    if (file != null) {
+                        exportInvoiceToTextFile(booking, file);
+                        showAlert(Alert.AlertType.INFORMATION, "Xuất hóa đơn thành công", "Hóa đơn đã được lưu tại:\n" + file.getAbsolutePath());
+                    }
+                }
+            });
+
             refreshData();
         } else {
             showAlert(Alert.AlertType.ERROR, "Lỗi", "Không thể thực hiện Check-out.");
@@ -260,6 +293,53 @@ public class ReceptionistController {
                 e.printStackTrace();
                 showAlert(Alert.AlertType.ERROR, "Lỗi xuất file", "Không thể ghi file CSV: " + e.getMessage());
             }
+        }
+    }
+
+    private void exportInvoiceToTextFile(Booking booking, File file) {
+        try (java.io.PrintWriter writer = new java.io.PrintWriter(
+                new java.io.OutputStreamWriter(new java.io.FileOutputStream(file), java.nio.charset.StandardCharsets.UTF_8))) {
+            writer.println("==================================================");
+            writer.println("               GRAND LUXURY HOTEL                 ");
+            writer.println("               HÓA ĐƠN THANH TOÁN                 ");
+            writer.println("==================================================");
+            writer.println("Mã đặt phòng: " + booking.getId());
+            writer.println("Khách hàng (Email): " + booking.getCustomerEmail());
+            writer.println("Số phòng: " + booking.getRoomNumber());
+            writer.println("Ngày nhận phòng (Check-in): " + booking.getCheckIn());
+            writer.println("Ngày trả phòng (Check-out): " + booking.getCheckOut());
+            
+            long days = java.time.temporal.ChronoUnit.DAYS.between(booking.getCheckIn(), booking.getCheckOut());
+            if (days <= 0) days = 1;
+            writer.println("Số đêm lưu trú: " + days);
+            writer.println("--------------------------------------------------");
+            
+            double pricePerNight = 0;
+            String sql = "SELECT price FROM rooms WHERE id = ?";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, booking.getRoomId());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        pricePerNight = rs.getDouble("price");
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (pricePerNight == 0) {
+                pricePerNight = booking.getTotal() / days;
+            }
+            
+            writer.println("Đơn giá phòng/đêm: " + String.format("%,.0f", pricePerNight) + " VND");
+            writer.println("--------------------------------------------------");
+            writer.println("TỔNG TIỀN THANH TOÁN: " + String.format("%,.0f", booking.getTotal()) + " VND");
+            writer.println("==================================================");
+            writer.println("           Cảm ơn quý khách đã lựa chọn           ");
+            writer.println("               GRAND LUXURY HOTEL                 ");
+            writer.println("==================================================");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

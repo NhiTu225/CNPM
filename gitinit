@@ -1,22 +1,14 @@
-# Git Initialization Guide & Commands
-
-# 1. Initialize local Git repository
+# Khoi tao git va push code len github cua nhom
 git init
 git branch -M main
 
-# 2. Link your local repository to GitHub/GitLab
-# (Replace '<your-repository-url>' with your actual repository URL)
-# git remote add origin <your-repository-url>
+# Sua link github nhom vao day
+# git remote add origin <link-repo>
 
-# 3. Stage and commit all existing project files
 git add .
-git commit -m "Initial commit - Hotel Booking System project setup"
-
-# 4. Push your project code to the main branch
+git commit -m "initial commit"
 # git push -u origin main
 
-# 5. Create a new branch and push your features
-# git checkout -b <branch_name>
-# git add .
-# git commit -m "Describe your changes"
-# git push -u origin <branch_name>
+# Lenh checkout nhanh de lam viec nhom
+# git checkout -b <ten_branch>
+# git push -u origin <ten_branch>
