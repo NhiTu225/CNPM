@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.hotelmanagement.controller.AdminController"
+      prefWidth="1024"
+      prefHeight="720"
+      spacing="0"
+      styleClass="root">
+
+    <stylesheets>
+        <URL value="@/css/style.css" />
+    </stylesheets>
+
+    <!-- Header Area -->
+    <HBox styleClass="nav-bar" alignment="CENTER_LEFT" spacing="20">
+        <Label text="GRAND LUXURY" styleClass="logo"/>
+        <Label text="Bảng Điều Hành Khách Sạn - Lễ Tân &amp; Admin" style="-fx-text-fill: #cbd5e0; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+        <HBox HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblWelcome" text="Welcome, Admin!" style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+        <Button text="Đăng xuất" onAction="#logout" styleClass="button-danger" style="-fx-padding: 6 12;"/>
+    </HBox>
+
+    <!-- Main Content Area -->
+    <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" style="-fx-padding: 15;">
+        <tabs>
+            <!-- Tab 1: Quản lý phòng (Room CRUD & CSV) -->
+            <Tab fx:id="tabRoomManagement" text="Quản lý phòng">
+                <SplitPane dividerPositions="0.38" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
+                    <items>
+                        <!-- Form nhập liệu bên trái -->
+                        <VBox spacing="15" styleClass="card" style="-fx-background-radius: 12 0 0 12; -fx-border-radius: 12 0 0 12;">
+                            <Label text="Thông tin phòng" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a365d;"/>
+                            
+                            <GridPane hgap="10" vgap="12">
+                                <Label text="Số phòng:" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-font-weight: bold; -fx-text-fill: #718096;"/>
+                                <TextField fx:id="txtRoomNumber" promptText="VD: 101" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                                <Label text="Tên phòng:" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-font-weight: bold; -fx-text-fill: #718096;"/>
+                                <TextField fx:id="txtRoomName" promptText="VD: Phòng Deluxe Premium 1" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                                <Label text="Loại phòng:" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-font-weight: bold; -fx-text-fill: #718096;"/>
+                                <TextField fx:id="txtRoomType" promptText="VD: Deluxe" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                                <Label text="Giá phòng:" GridPane.rowIndex="3" GridPane.columnIndex="0" style="-fx-font-weight: bold; -fx-text-fill: #718096;"/>
+                                <TextField fx:id="txtRoomPrice" promptText="VD: 1200000" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                                <Label text="Đường dẫn ảnh:" GridPane.rowIndex="4" GridPane.columnIndex="0" style="-fx-font-weight: bold; -fx-text-fill: #718096;"/>
+                                <TextField fx:id="txtRoomImage" promptText="URL ảnh..." GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+                                <Label text="Trạng thái:" GridPane.rowIndex="5" GridPane.columnIndex="0" style="-fx-font-weight: bold; -fx-text-fill: #718096;"/>
+                                <ComboBox fx:id="cbRoomStatus" prefWidth="180" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                            </GridPane>
+
+                            <!-- Hàng nút CRUD -->
+                            <HBox spacing="10" alignment="CENTER" style="-fx-padding: 10 0 0 0;">
+                                <Button text="Thêm" onAction="#addRoom" prefWidth="75" styleClass="button-success" style="-fx-padding: 8 12;"/>
+                                <Button text="Sửa" onAction="#updateRoom" prefWidth="75" styleClass="button-primary" style="-fx-padding: 8 12;"/>
+                                <Button text="Xóa" onAction="#deleteRoom" prefWidth="75" styleClass="button-danger" style="-fx-padding: 8 12;"/>
+                                <Button text="Làm mới" onAction="#clearRoomFields" prefWidth="75" style="-fx-padding: 8 12;"/>
+                            </HBox>
+
+
+                        </VBox>
+
+                        <!-- Bảng hiển thị bên phải -->
+                        <VBox spacing="10" styleClass="card" style="-fx-background-radius: 0 12 12 0; -fx-border-radius: 0 12 12 0; -fx-padding: 15;">
+                            <TableView fx:id="tblRooms" onMouseClicked="#handleRoomTableClick" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colRoomId" text="ID" prefWidth="50"/>
+                                    <TableColumn fx:id="colRoomNumber" text="Số phòng" prefWidth="80"/>
+                                    <TableColumn fx:id="colRoomName" text="Tên phòng" prefWidth="150"/>
+                                    <TableColumn fx:id="colRoomType" text="Loại phòng" prefWidth="100"/>
+                                    <TableColumn fx:id="colRoomPrice" text="Giá phòng" prefWidth="120"/>
+                                    <TableColumn fx:id="colRoomStatus" text="Trạng thái" prefWidth="100"/>
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </items>
+                </SplitPane>
+            </Tab>
+
+            <!-- Tab 4: Quản lý người dùng (User & Role CRUD) -->
+            <Tab fx:id="tabUserManagement" text="Quản lý người dùng">
+                <SplitPane dividerPositions="0.38" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
+                    <items>
+                        <!-- Form nhập liệu bên trái -->
+                        <VBox spacing="15" styleClass="card" style="-fx-background-radius: 12 0 0 12; -fx-border-radius: 12 0 0 12;">
+                            <Label text="Thông tin tài khoản" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a365d;"/>
+                            
+                            <GridPane hgap="10" vgap="12">
+                                <Label text="Họ và tên:" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-font-weight: bold; -fx-text-fill: #718096;"/>
+                                <TextField fx:id="txtUserFullName" promptText="VD: Nguyễn Văn A" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                                <Label text="Email:" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-font-weight: bold; -fx-text-fill: #718096;"/>
+                                <TextField fx:id="txtUserEmail" promptText="VD: user@gmail.com" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                                <Label text="Mật khẩu:" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-font-weight: bold; -fx-text-fill: #718096;"/>
+                                <TextField fx:id="txtUserPassword" promptText="Mật khẩu..." GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                                <Label text="Vai trò:" GridPane.rowIndex="3" GridPane.columnIndex="0" style="-fx-font-weight: bold; -fx-text-fill: #718096;"/>
+                                <ComboBox fx:id="cbUserRole" prefWidth="180" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                            </GridPane>
+
+                            <!-- Hàng nút CRUD -->
+                            <HBox spacing="10" alignment="CENTER" style="-fx-padding: 10 0 0 0;">
+                                <Button text="Thêm" onAction="#addUser" prefWidth="75" styleClass="button-success" style="-fx-padding: 8 12;"/>
+                                <Button text="Sửa" onAction="#updateUser" prefWidth="75" styleClass="button-primary" style="-fx-padding: 8 12;"/>
+                                <Button text="Xóa" onAction="#deleteUser" prefWidth="75" styleClass="button-danger" style="-fx-padding: 8 12;"/>
+                                <Button text="Làm mới" onAction="#clearUserFields" prefWidth="75" style="-fx-padding: 8 12;"/>
+                            </HBox>
+                        </VBox>
+
+                        <!-- Bảng hiển thị bên phải -->
+                        <VBox spacing="10" styleClass="card" style="-fx-background-radius: 0 12 12 0; -fx-border-radius: 0 12 12 0; -fx-padding: 15;">
+                            <TableView fx:id="tblUsers" onMouseClicked="#handleUserTableClick" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colUserId" text="ID" prefWidth="60"/>
+                                    <TableColumn fx:id="colUserFullName" text="Họ và tên" prefWidth="150"/>
+                                    <TableColumn fx:id="colUserEmail" text="Email tài khoản" prefWidth="200"/>
+                                    <TableColumn fx:id="colUserRole" text="Vai trò" prefWidth="120"/>
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </items>
+                </SplitPane>
+            </Tab>
+
+             <!-- Tab 3: Báo cáo & Phân tích (Reports & Analytics) -->
+            <Tab fx:id="tabReports" text="Báo cáo &amp; Phân tích">
+                <GridPane hgap="20" vgap="20">
+                    <columnConstraints>
+                        <javafx.scene.layout.ColumnConstraints percentWidth="50"/>
+                        <javafx.scene.layout.ColumnConstraints percentWidth="50"/>
+                    </columnConstraints>
+                    <rowConstraints>
+                        <javafx.scene.layout.RowConstraints percentHeight="100"/>
+                    </rowConstraints>
+
+                    <!-- Doanh thu: BarChart -->
+                    <VBox spacing="10" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="card">
+                        <Label text="Thống kê doanh thu theo tháng" style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a365d;"/>
+                        <BarChart fx:id="chartRevenue" VBox.vgrow="ALWAYS" legendVisible="false" style="-fx-bar-fill: #1a365d;">
+                            <xAxis>
+                                <CategoryAxis side="BOTTOM" label="Tháng"/>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis side="LEFT" label="VND"/>
+                            </yAxis>
+                        </BarChart>
+                    </VBox>
+
+                    <!-- Lấp đầy: PieChart -->
+                    <VBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="card">
+                        <Label text="Phân tích tình trạng phòng hiện tại" style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a365d;"/>
+                        <PieChart fx:id="chartOccupancy" VBox.vgrow="ALWAYS"/>
+                    </VBox>
+                </GridPane>
+            </Tab>
+
+            <!-- Tab 4: Nhật ký hệ thống (System Logs) -->
+            <Tab fx:id="tabSystemLogs" text="Nhật ký hệ thống">
+                <VBox spacing="15" styleClass="card">
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Nhật ký hoạt động hệ thống (NFR11)" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a365d;"/>
+                        <HBox HBox.hgrow="ALWAYS"/>
+                        <Button text="Làm mới Nhật ký" onAction="#refreshLogs" styleClass="button-primary" style="-fx-background-color: #607d8b;"/>
+                    </HBox>
+
+                    <TableView fx:id="tblLogs" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colLogId" text="ID" prefWidth="80"/>
+                            <TableColumn fx:id="colLogUser" text="Tài khoản thực hiện" prefWidth="250"/>
+                            <TableColumn fx:id="colLogAction" text="Hành động" prefWidth="400"/>
+                            <TableColumn fx:id="colLogTime" text="Thời gian" prefWidth="200"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+        </tabs>
+    </TabPane>
+</VBox>
